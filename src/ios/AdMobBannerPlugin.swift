@@ -46,7 +46,7 @@ class AdMobBannerPlugin: CDVPlugin, BannerViewDelegate, AdSizeDelegate {
 
             let frameWidth = parentView.frame.inset(by: parentView.safeAreaInsets).width
             let adWidth = frameWidth > 0 ? frameWidth : parentView.frame.width
-            let adaptiveSize = GADLargeAnchoredAdaptiveBannerAdSizeWithWidth(adWidth)
+            let adaptiveSize = largeAnchoredAdaptiveBanner(width: adWidth)
 
             let banner = BannerView(adSize: adaptiveSize)
             banner.adUnitID = adUnitId
