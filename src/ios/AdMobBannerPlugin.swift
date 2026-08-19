@@ -23,6 +23,12 @@ class AdMobBannerPlugin: CDVPlugin, BannerViewDelegate, AdSizeDelegate {
             name: UIResponder.keyboardWillHideNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(orientationDidChange),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
     }
 
     @objc(create:)
@@ -58,7 +64,6 @@ class AdMobBannerPlugin: CDVPlugin, BannerViewDelegate, AdSizeDelegate {
 
             parentView.addSubview(banner)
 
-            // Anchor above safe areas at bottom of screen
             NSLayoutConstraint.activate([
                 banner.bottomAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.bottomAnchor),
                 banner.centerXAnchor.constraint(equalTo: parentView.centerXAnchor)
@@ -96,6 +101,26 @@ class AdMobBannerPlugin: CDVPlugin, BannerViewDelegate, AdSizeDelegate {
     @objc private func keyboardWillHide(notification: Notification) {
         isKeyboardVisible = false
         bannerView?.isHidden = false
+    }
+
+    // MARK: - Orientation Handling
+
+    @objc private func orientationDidChange() {
+        guard bannerView != nil else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self,
+                  let banner = self.bannerView,
+                  let parentView = self.viewController?.view else { return }
+
+            let frameWidth = parentView.frame.inset(by: parentView.safeAreaInsets).width
+            let adWidth = frameWidth > 0 ? frameWidth : parentView.frame.width
+            let newSize = largeAnchoredAdaptiveBanner(width: adWidth)
+
+            // Update ad size and request a new ad for the new orientation
+            banner.adSize = newSize
+            banner.load(Request())
+        }
     }
 
     // MARK: - BannerViewDelegate

@@ -1,6 +1,7 @@
 
 package com.admob.banner
 
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.util.DisplayMetrics
@@ -26,6 +27,7 @@ class AdMobBannerPlugin : CordovaPlugin() {
 
     private var bannerContainer: FrameLayout? = null
     private var adView: AdView? = null
+    private var currentAdUnitId: String? = null
 
     override fun execute(
         action: String,
@@ -39,12 +41,14 @@ class AdMobBannerPlugin : CordovaPlugin() {
                     callbackContext.error("adUnitId is required")
                     return true
                 }
+                currentAdUnitId = adUnitId
                 cordova.activity.runOnUiThread {
                     createBanner(adUnitId, callbackContext)
                 }
                 return true
             }
             "destroy" -> {
+                currentAdUnitId = null
                 cordova.activity.runOnUiThread {
                     destroyBanner(callbackContext)
                 }
@@ -54,9 +58,9 @@ class AdMobBannerPlugin : CordovaPlugin() {
         }
     }
 
-    private fun createBanner(adUnitId: String, callbackContext: CallbackContext) {
+    private fun createBanner(adUnitId: String, callbackContext: CallbackContext?) {
         val activity = cordova.activity ?: run {
-            callbackContext.error("Activity is unavailable")
+            callbackContext?.error("Activity is unavailable")
             return
         }
 
@@ -86,7 +90,7 @@ class AdMobBannerPlugin : CordovaPlugin() {
         bannerContainer = container
         adView = newAdView
 
-        // Handle safe areas and auto hide/show on software keyboard (IME)
+        // Safe area and software keyboard (IME) visibility listener
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
             val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             if (imeVisible) {
@@ -104,11 +108,17 @@ class AdMobBannerPlugin : CordovaPlugin() {
             insets
         }
 
+        loadBannerAd(adUnitId, newAdView)
+        callbackContext?.success()
+    }
+
+    private fun loadBannerAd(adUnitId: String, view: AdView) {
+        val activity = cordova.activity ?: return
         val adWidth = getAdWidthInDp()
         val adSize = AdSize.getLargeAnchoredAdaptiveBannerAdSize(activity, adWidth)
         val bannerRequest = BannerAdRequest.Builder(adUnitId, adSize).build()
 
-        newAdView.loadAd(bannerRequest, object : AdLoadCallback<BannerAd> {
+        view.loadAd(bannerRequest, object : AdLoadCallback<BannerAd> {
             override fun onAdLoaded(bannerAd: BannerAd) {
                 bannerAd.adEventCallback = object : BannerAdEventCallback() {}
 
@@ -127,11 +137,30 @@ class AdMobBannerPlugin : CordovaPlugin() {
                 emitJsEvent("admob.ad.loadfail", escapedError)
             }
         })
+    }
 
-        callbackContext.success()
+    // Handles orientation changes
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val adUnitId = currentAdUnitId ?: return
+
+        cordova.activity?.let { activity ->
+            activity.runOnUiThread {
+                val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
+                // Post to ensure view bounds and metrics update after rotation
+                rootView?.post {
+                    adView?.let { view ->
+                        loadBannerAd(adUnitId, view)
+                    } ?: run {
+                        createBanner(adUnitId, null)
+                    }
+                }
+            }
+        }
     }
 
     private fun destroyBanner(callbackContext: CallbackContext) {
+        currentAdUnitId = null
         removeBannerViews()
         callbackContext.success()
     }
@@ -171,6 +200,7 @@ class AdMobBannerPlugin : CordovaPlugin() {
     }
 
     override fun onDestroy() {
+        currentAdUnitId = null
         removeBannerViews()
         super.onDestroy()
     }
