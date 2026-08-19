@@ -1,0 +1,24 @@
+{
+    "name": "cordova-plugin-google-admob-banner",
+    "version": "1.0.0",
+    "description": "Cordova plugin to display Google AdMob adaptive banner ads at the bottom of the screen with safe area and keyboard handling.",
+    "cordova": {
+        "id": "cordova-plugin-google-admob-banner",
+        "platforms": [
+            "android",
+            "ios"
+        ]
+    },
+    "keywords": [
+        "ecosystem:cordova",
+        "cordova-android",
+        "cordova-ios",
+        "admob",
+        "google-ads",
+        "banner",
+        "adaptive-banner"
+    ],
+    "author": "",
+    "license": "MIT",
+    "main": "www/admob.js"
+}

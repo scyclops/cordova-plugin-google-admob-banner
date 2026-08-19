@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-plugin-google-admob-banner"
+        version="1.0.0">
+    <name>admob</name>
+    <description>Google AdMob Adaptive Banner Plugin</description>
+    <license>MIT</license>
+    <keywords>cordova,admob,banner,adaptive</keywords>
+
+    <js-module src="www/admob.js" name="admob">
+        <clobbers target="window.admob" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="AdMobBannerPlugin">
+                <param name="android-package" value="com.admob.banner.AdMobBannerPlugin" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        </config-file>
+
+        <framework src="src/android/build-extras.gradle" custom="true" type="gradleReference" />
+
+        <source-file src="src/android/AdMobBannerPlugin.kt" target-dir="app/src/main/kotlin/com/admob/banner" />
+    </platform>
+
+    <platform name="ios">
+        <config-file target="config.xml" parent="/*">
+            <feature name="AdMobBannerPlugin">
+                <param name="ios-package" value="AdMobBannerPlugin" />
+            </feature>
+        </config-file>
+
+        <podspec>
+            <config>
+                <source url="https://cdn.cocoapods.org/"/>
+            </config>
+            <pods use-frameworks="true">
+                <pod name="Google-Mobile-Ads-SDK" spec="~> 13.8.0" />
+            </pods>
+        </podspec>
+
+        <source-file src="src/ios/AdMobBannerPlugin.swift" />
+    </platform>
+</plugin>
